@@ -15,6 +15,7 @@ class DataManager {
         this.currentVersion = null;
         this.currentPracticeStatus = null;
         this.currentKeyword = this.loadText(this.storageKeys.keyword, '');
+        this.draftKeyword = this.currentKeyword;
         this.sortMode = this.loadText(this.storageKeys.sortMode, 'priority');
 
         this.init();
@@ -195,7 +196,16 @@ class DataManager {
 
     setKeyword(keyword) {
         this.currentKeyword = keyword;
+        this.draftKeyword = keyword;
         this.saveText(this.storageKeys.keyword, keyword);
+    }
+
+    setDraftKeyword(keyword) {
+        this.draftKeyword = keyword;
+    }
+
+    applyDraftKeyword() {
+        this.setKeyword(this.draftKeyword);
     }
 
     setSortMode(mode) {
@@ -248,6 +258,7 @@ class UIManager {
         this.filterBarEl = document.getElementById('filterBar');
         this.toolbarEl = document.getElementById('toolbar');
         this.articleListEl = document.getElementById('articleList');
+        this.backToTopBtnEl = document.getElementById('backToTopBtn');
     }
 
     updateStats() {
@@ -287,7 +298,7 @@ class UIManager {
 
     renderToolbar() {
         const sortMode = this.dataManager.sortMode;
-        const keyword = this.escapeHtml(this.dataManager.currentKeyword);
+        const keyword = this.escapeHtml(this.dataManager.draftKeyword);
 
         this.toolbarEl.innerHTML = `
             <div class="toolbar-left">
@@ -304,6 +315,7 @@ class UIManager {
                     placeholder="搜索标题或简介，比如 Android 13、Settings、音量键"
                     value="${keyword}"
                 />
+                <button class="toolbar-btn toolbar-search-btn" data-role="search-keyword">搜索</button>
             </div>
             <div class="toolbar-tip">
                 优先级模式下可直接拖动卡片调整顺序；右键可置顶、取消置顶，或一键移到最前。
@@ -358,6 +370,15 @@ class UIManager {
         this.renderFilters();
         this.renderToolbar();
         this.renderArticles();
+        this.updateBackToTopVisibility();
+    }
+
+    updateBackToTopVisibility() {
+        if (!this.backToTopBtnEl) {
+            return;
+        }
+
+        this.backToTopBtnEl.classList.toggle('visible', window.scrollY > 240);
     }
 
     escapeHtml(text) {
@@ -569,6 +590,12 @@ class EventManager {
 
                 this.dataManager.resetCustomOrder();
                 this.uiManager.updateUI();
+                return;
+            }
+
+            if (role === 'search-keyword') {
+                this.dataManager.applyDraftKeyword();
+                this.uiManager.updateUI();
             }
         });
 
@@ -577,7 +604,16 @@ class EventManager {
                 return;
             }
 
-            this.dataManager.setKeyword(event.target.value);
+            this.dataManager.setDraftKeyword(event.target.value);
+        });
+
+        this.uiManager.toolbarEl.addEventListener('keydown', (event) => {
+            if (event.target.id !== 'keywordInput' || event.key !== 'Enter') {
+                return;
+            }
+
+            event.preventDefault();
+            this.dataManager.applyDraftKeyword();
             this.uiManager.updateUI();
         });
 
@@ -671,6 +707,16 @@ class EventManager {
             this.draggedArticleId = null;
             this.clearDragState();
         });
+
+        if (this.uiManager.backToTopBtnEl) {
+            this.uiManager.backToTopBtnEl.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        window.addEventListener('scroll', () => {
+            this.uiManager.updateBackToTopVisibility();
+        }, { passive: true });
     }
 
     clearDragOverState() {
@@ -772,6 +818,12 @@ class App {
 
     init() {
         this.uiManager.updateUI();
+
+        if (this.uiManager.backToTopBtnEl) {
+            this.uiManager.backToTopBtnEl.textContent = 'TOP';
+            this.uiManager.backToTopBtnEl.title = 'Back to top';
+            this.uiManager.backToTopBtnEl.setAttribute('aria-label', 'Back to top');
+        }
     }
 }
 
