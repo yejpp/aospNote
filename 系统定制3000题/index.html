@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Framework 应用定制题库</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(252, 85, 49, 0.08), transparent 28%),
+                linear-gradient(180deg, #fffaf8 0%, #f6f6f6 100%);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 14px;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #222;
+            margin: 0 0 10px;
+        }
+
+        .stats {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            margin: 18px 0 22px;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #fff7f4, #fff);
+            border: 1px solid #ffe1d9;
+            border-radius: 12px;
+        }
+
+        .toolbar-left,
+        .toolbar-right {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toolbar-label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .sort-btn,
+        .toolbar-btn {
+            padding: 8px 14px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .sort-btn:hover,
+        .toolbar-btn:hover {
+            background: #f7f7f7;
+        }
+
+        .sort-btn.active {
+            background: #fc5531;
+            color: white;
+            border-color: #fc5531;
+        }
+
+        .search-input {
+            width: min(340px, 76vw);
+            padding: 9px 14px;
+            border: 1px solid #ddd;
+            border-radius: 999px;
+            font-size: 13px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .search-input:focus {
+            border-color: #fc5531;
+            box-shadow: 0 0 0 3px rgba(252, 85, 49, 0.12);
+        }
+
+        .toolbar-tip {
+            width: 100%;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .filter-group h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .filter-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .filter-btn.active {
+            background: #fc5531;
+            color: white;
+            border-color: #fc5531;
+        }
+
+        .article-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .article-item {
+            border: 1px solid #e8e8e8;
+            border-radius: 10px;
+            padding: 15px;
+            background: #fafafa;
+            transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+        }
+
+        .article-item:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            background: #fff;
+        }
+
+        .article-item.practiced {
+            border-left: 4px solid #4caf50;
+            background: #f1f8e9;
+        }
+
+        .article-item.pinned {
+            border-color: #ffb199;
+            background: #fff7f4;
+        }
+
+        .article-item.dragging {
+            opacity: 0.55;
+            transform: scale(0.99);
+        }
+
+        .article-item.drag-over {
+            border-color: #fc5531;
+            box-shadow: 0 0 0 3px rgba(252, 85, 49, 0.12);
+        }
+
+        .practice-status {
+            margin-left: 10px;
+            font-size: 16px;
+        }
+
+        .practice-status.practiced {
+            color: #4caf50;
+        }
+
+        .article-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .article-title a {
+            color: #2c3e50;
+            text-decoration: none;
+        }
+
+        .article-title a:hover {
+            color: #fc5531;
+            text-decoration: underline;
+        }
+
+        .article-desc {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .article-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            color: #777;
+            font-size: 13px;
+            align-items: center;
+        }
+
+        .article-meta span {
+            display: flex;
+            align-items: center;
+        }
+
+        .practice-btn,
+        .note-btn {
+            padding: 4px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            margin-left: auto;
+        }
+
+        .practice-btn:hover,
+        .note-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .practice-btn {
+            color: #4caf50;
+            border-color: #4caf50;
+        }
+
+        .note-btn {
+            color: #2196f3;
+            border-color: #2196f3;
+            margin-left: 10px;
+        }
+
+        .context-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 8px 0;
+            z-index: 1000;
+            min-width: 180px;
+        }
+
+        .menu-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .menu-item:hover {
+            background: #f7f1ee;
+        }
+
+        .version-tag {
+            background: #e1f5fe;
+            color: #0288d1;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .pin-tag {
+            background: #fff0ea;
+            color: #fc5531;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .drag-hint {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #f1f1f1;
+            color: #888;
+            cursor: grab;
+            user-select: none;
+            font-size: 14px;
+        }
+
+        .drag-hint:active {
+            cursor: grabbing;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .toolbar {
+                padding: 12px;
+            }
+
+            .toolbar-left,
+            .toolbar-right {
+                width: 100%;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+
+            .article-meta {
+                gap: 10px;
+            }
+
+            .practice-btn,
+            .note-btn {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Framework 应用定制题库</h1>
+        <div class="stats" id="stats">加载中...</div>
+
+        <div class="filter-bar" id="filterBar"></div>
+        <div class="toolbar" id="toolbar"></div>
+        <div class="article-list" id="articleList"></div>
+    </div>
+
+    <script src="deduplicated.js"></script>
+    <script src="main.js"></script>
+</body>
+
+</html>
